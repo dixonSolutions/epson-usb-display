@@ -5,7 +5,13 @@ UDManager.dll, EMP_UDSA.exe) shipped on the projector's built-in `EPSON_PJ_UD` C
 
 **Verified on hardware** (EB-series unit reporting platform 11 / "PGUD", 1024x768): capability
 query, Y-mode connect, BUSY -> REDY -> unsolicited RESUME handshake, and full-frame 0xA0 band
-updates at ~9.6 fps. Section 8 describes that unit; sections 5-6 (JPEG "C" mode) are untested. All addresses are VAs in the named
+updates at ~9.6 fps. Partial updates work when they start below row 0 (any end row). An update that starts at
+row 0 but ends before the last row is ignored, so the Linux client sends a full frame whenever
+row 0 changes. Measured throughput is ~28 MB/s in the data phase (~23.7 MB/s including
+CBW/CSW), i.e. ~9.4 fps for full 24-bit frames. Connecting with 16 bpp gets REDY but never
+RESUME, so 16-bit mode appears unsupported on this unit. Section 8 describes that unit; sections 5-6 (JPEG "C" mode) are untested.
+
+All addresses are VAs in the named
 binary (image base 0x10000000 for the DLLs, 0x00400000 for EMP_UDSA.exe). Multi-byte values are
 little-endian (LE) unless marked BE.
 

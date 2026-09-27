@@ -81,8 +81,8 @@ cd epson-usb-display
   <h2>How it works</h2>
   <p>The projector pretends to be a CD-ROM. Epson's Windows driver sends the picture as vendor SCSI
     commands to that CD-ROM. epson-usb-display does the same from userspace through libusb. It asks
-    GNOME for a virtual monitor, captures it through PipeWire, and streams changed rows to the projector
-    as raw 24-bit bands, at about 10 fps full-screen.</p>
+    GNOME for a virtual monitor, captures it through PipeWire, and streams the changed rows to the projector
+    as raw 24-bit bands. Small changes are near-instant; full-screen changes run at about 9 fps.</p>
   <p>The full reverse-engineered protocol is documented in
     <a href="https://github.com/dixonSolutions/epson-usb-display/blob/main/docs/PROTOCOL.md">PROTOCOL.md</a>.</p>
 

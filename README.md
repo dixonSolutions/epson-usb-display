@@ -16,7 +16,7 @@ It runs entirely in userspace and needs no kernel module.
 |---|---|
 | Tested projector | Epson unit enumerating as `04b8:061b` "EPSON VS340/X300/X130/X04" with 1024×768 panel (firmware reports platform 11, "PGUD") |
 | Desktop | GNOME 50 on Wayland (Fedora 43) |
-| Speed | ~10 fps full-screen; only changed rows are resent |
+| Speed | 60 Hz virtual monitor; small changes (cursor, typing) are sent as partial updates in a few ms, full-screen changes run at ~9 fps (the projector's USB accepts ~28 MB/s of raw 24-bit pixels) |
 | Works | virtual monitor in GNOME, extend/mirror, test pattern tool |
 | Untested | unplug/replug while running, projector remote buttons (the kernel already exposes them as a HID keyboard) |
 | Not yet | JPEG ("C" mode) projectors, audio, KDE/wlroots desktops |
@@ -63,7 +63,7 @@ sudo cp 70-epson-usb-display.rules /etc/udev/rules.d/ && sudo udevadm control --
 GNOME (Mutter ScreenCast.RecordVirtual) ── PipeWire ── GStreamer (BGR 1024×768)
       │ virtual monitor "Meta-0"                              │
       └── you drag windows onto it                            ▼
-                                           epson_ud: diff rows → 20-line bands
+                                           epson_ud: changed rows → 20-line bands
                                                               │
                         SCSI vendor cmd 0xD9 in USB Bulk-Only Transport (libusb)
                                                               ▼

@@ -15,10 +15,12 @@ SC_BUS = "org.gnome.Mutter.ScreenCast"
 
 
 class VirtualDisplay:
-    def __init__(self, width, height, on_frame, fps=10):
+    def __init__(self, width, height, on_frame, fps=60, on_closed=None):
         Gst.init(None)
         self.width, self.height, self.fps = width, height, fps
         self.on_frame = on_frame
+        self.on_closed = on_closed
+        self._receivers = []
         self.bus = dbus.SessionBus()
         self.pipeline = None
         self.session = None
@@ -31,9 +33,21 @@ class VirtualDisplay:
             "cursor-mode": dbus.UInt32(1),       # draw the cursor into frames
             "is-platform": dbus.Boolean(True),   # behave like a real output
         }, signature="sv"))
-        self.bus.add_signal_receiver(self._on_stream, "PipeWireStreamAdded",
-                                     SC_BUS + ".Stream", path=stream)
+        self._receivers = [
+            self.bus.add_signal_receiver(self._on_stream, "PipeWireStreamAdded",
+                                         SC_BUS + ".Stream", path=stream),
+            # GNOME ends the session e.g. when "Stop" is clicked on the
+            # screen-sharing indicator; the caller decides whether to recreate.
+            self.bus.add_signal_receiver(self._on_session_closed, "Closed",
+                                         SC_BUS + ".Session", path=path),
+        ]
         self.session.Start()
+
+    def _on_session_closed(self):
+        self.session = None
+        self.stop()
+        if self.on_closed:
+            self.on_closed()
 
     def _on_stream(self, node_id):
         # The virtual monitor takes its mode from the size we negotiate, so
@@ -41,7 +55,6 @@ class VirtualDisplay:
         desc = (
             f"pipewiresrc path={node_id} always-copy=true ! "
             f"video/x-raw,width={self.width},height={self.height},max-framerate={self.fps}/1 ! "
-            f"videorate drop-only=true ! video/x-raw,framerate={self.fps}/1 ! "
             f"videoconvert ! videoscale ! video/x-raw,format=BGR,width={self.width},height={self.height} ! "
             f"appsink name=sink emit-signals=true max-buffers=1 drop=true sync=false"
         )
@@ -60,6 +73,9 @@ class VirtualDisplay:
         return Gst.FlowReturn.OK
 
     def stop(self):
+        for r in self._receivers:
+            r.remove()
+        self._receivers = []
         if self.pipeline:
             self.pipeline.set_state(Gst.State.NULL)
             self.pipeline = None

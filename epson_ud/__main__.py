@@ -30,6 +30,7 @@ class Session:
         self.frame = None
         self.cond = threading.Condition()
         self.stopped = threading.Event()
+        self.resend = threading.Event()
 
     def on_frame(self, bgr):
         with self.cond:
@@ -46,7 +47,16 @@ class Session:
             if not cap.scanlined:
                 raise ProtocolError("this projector uses JPEG (C) mode, which is not implemented yet")
             proj.connect(w, h)
-            display = VirtualDisplay(w, h, self.on_frame, fps=self.fps)
+            def recreate():
+                if self.stopped.is_set():
+                    return GLib.SOURCE_REMOVE
+                log("GNOME closed the virtual monitor; adding it again")
+                display.start()
+                self.resend.set()
+                return GLib.SOURCE_REMOVE
+
+            display = VirtualDisplay(w, h, self.on_frame, fps=self.fps,
+                                     on_closed=lambda: GLib.timeout_add(2000, recreate))
             GLib.idle_add(display.start)
             log("virtual monitor added; arrange it in Settings > Displays")
             self._stream(proj, w, h)
@@ -61,7 +71,9 @@ class Session:
         latest = None     # newest captured frame
         last_poll = 0.0
         stats_t, sent = time.monotonic(), 0
-        band = proj.band_height(w) * w * 3
+        last_full = 0.0
+        rows = proj.band_height(w)
+        band = rows * w * 3
         while not self.stopped.is_set():
             with self.cond:
                 if self.frame is None:
@@ -81,27 +93,36 @@ class Session:
                 if sent:
                     log(f"sent {sent} screen updates in the last minute")
                 stats_t, sent = time.monotonic(), 0
+            if self.resend.is_set():
+                self.resend.clear()
+                prev = None
             if latest is None or latest is prev or proj.state != STATE_RUNNING:
                 continue
             if len(latest) != w * h * 3:
                 continue
-            if prev is None:
+            if prev is None or time.monotonic() - last_full > 5:
+                # Full frame at start and every few seconds to heal any glitch.
                 proj.send_bands(latest, w, h)
+                last_full = time.monotonic()
                 sent += 1
-            else:
-                # Resend only the band range that changed, as one update.
+            elif latest != prev:
                 changed = [i for i in range(0, len(latest), band) if latest[i:i + band] != prev[i:i + band]]
                 if changed:
-                    rows = band // (w * 3)
-                    proj.send_bands(latest, w, h, top=changed[0] // (w * 3),
-                                    bottom=min(h, changed[-1] // (w * 3) + rows))
+                    top = changed[0] // (w * 3)
+                    bottom = min(h, changed[-1] // (w * 3) + rows)
+                    # An update starting at row 0 is only shown if it runs to
+                    # the bottom (verified on hardware), so send the whole frame.
+                    if top == 0:
+                        bottom = h
+                        last_full = time.monotonic()
+                    proj.send_bands(latest, w, h, top=top, bottom=bottom)
                     sent += 1
             prev = latest
 
 
 def main():
     ap = argparse.ArgumentParser(prog="epson-usb-display", description=__doc__)
-    ap.add_argument("--fps", type=int, default=10, help="capture rate (default 10)")
+    ap.add_argument("--fps", type=int, default=60, help="virtual monitor refresh rate (default 60)")
     ap.add_argument("--once", action="store_true", help="exit when the projector disconnects")
     args = ap.parse_args()
 
