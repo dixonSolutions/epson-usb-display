@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>epson-usb-display</title>
+<meta name="description" content="Use an Epson projector's USB-B USB Display port on Linux as a real GNOME monitor.">
+<style>
+  :root {
+    --bg: #f7f7f5; --fg: #1b1b1a; --muted: #5f5f5a; --card: #ffffff;
+    --line: #e2e2dc; --accent: #1f5fd6; --accent-fg: #ffffff; --code: #efefea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --fg: #ececea; --muted: #a3a39c; --card: #1d1d1b;
+      --line: #2f2f2c; --accent: #6b9bff; --accent-fg: #0d1117; --code: #262624;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 16px 72px; }
+  h1 { font-size: 2.2rem; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.15rem; margin: 40px 0 10px; }
+  p { margin: 0 0 14px; }
+  .lede { font-size: 1.15rem; color: var(--muted); max-width: 60ch; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px;
+    border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid var(--line);
+    color: var(--fg); background: var(--card);
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn svg { width: 18px; height: 18px; fill: currentColor; }
+  .small { font-size: 0.9rem; color: var(--muted); }
+  pre {
+    background: var(--code); padding: 14px 16px; border-radius: 8px; overflow-x: auto;
+    font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin: 0 0 14px;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+  ul { padding-left: 20px; margin: 0 0 14px; }
+  li { margin: 4px 0; }
+  a { color: var(--accent); }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<main>
+  <h1>epson-usb-display</h1>
+  <p class="lede">Use an Epson projector's USB-B “USB Display” port on Linux. The projector
+    appears in GNOME as a normal monitor you can extend onto or mirror. No HDMI or VGA cable needed.</p>
+
+  <div class="buttons">
+    <a class="btn primary" href="https://github.com/dixonSolutions/epson-usb-display/archive/refs/heads/main.zip">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v10.17l3.59-3.58L18 11l-6 6-6-6 1.41-1.41L11 13.17zM5 19h14v2H5z"/></svg>
+      Download (.zip)
+    </a>
+    <a class="btn" href="https://github.com/dixonSolutions/epson-usb-display">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      View on GitHub
+    </a>
+  </div>
+  <p class="small">MIT licensed · Not affiliated with Seiko Epson</p>
+
+  <h2>Install</h2>
+  <pre>git clone https://github.com/dixonSolutions/epson-usb-display.git
+cd epson-usb-display
+./install.sh</pre>
+  <p>Connect the USB-B cable, pick the <strong>USB Display</strong> source on the projector, and a new
+    1024×768 monitor shows up in <em>Settings → Displays</em>.</p>
+
+  <h2>Requirements</h2>
+  <ul>
+    <li>GNOME on Wayland (tested on GNOME 50, Fedora 43)</li>
+    <li>Python 3 with PyGObject and dbus-python, GStreamer with the PipeWire plugin</li>
+    <li>An Epson projector that enumerates as USB <code>04b8:061b</code> (EB-X04, EB-X130, EB-X300, VS340, …)</li>
+  </ul>
+
+  <h2>How it works</h2>
+  <p>The projector pretends to be a CD-ROM. Epson's Windows driver sends the picture as vendor SCSI
+    commands to that CD-ROM. epson-usb-display does the same from userspace through libusb. It asks
+    GNOME for a virtual monitor, captures it through PipeWire, and streams changed rows to the projector
+    as raw 24-bit bands, at about 10 fps full-screen.</p>
+  <p>The full reverse-engineered protocol is documented in
+    <a href="https://github.com/dixonSolutions/epson-usb-display/blob/main/docs/PROTOCOL.md">PROTOCOL.md</a>.</p>
+
+  <footer class="small">
+    <a href="https://github.com/dixonSolutions/epson-usb-display">github.com/dixonSolutions/epson-usb-display</a>
+  </footer>
+</main>
+</body>
+</html>

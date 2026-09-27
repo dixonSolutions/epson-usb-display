@@ -1,0 +1,2 @@
+# Epson projector USB Display (EMP_UD): let the logged-in user drive it via libusb
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="04b8", ATTR{idProduct}=="061b", TAG+="uaccess"
